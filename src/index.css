@@ -1,0 +1,140 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 10 10 15;
+    --foreground: 255 255 255;
+
+    --card: 15 15 25;
+    --card-foreground: 255 255 255;
+
+    --popover: 15 15 25;
+    --popover-foreground: 255 255 255;
+
+    --primary: 0 217 255;
+    --primary-foreground: 10 10 15;
+
+    --secondary: 26 26 46;
+    --secondary-foreground: 255 255 255;
+
+    --muted: 26 26 46;
+    --muted-foreground: 160 160 180;
+
+    --accent: 184 71 255;
+    --accent-foreground: 255 255 255;
+
+    --destructive: 255 27 122;
+    --destructive-foreground: 255 255 255;
+
+    --border: 26 26 46;
+    --input: 26 26 46;
+    --ring: 0 217 255;
+
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-tech;
+    background: radial-gradient(ellipse at center, rgba(184, 71, 255, 0.1) 0%, rgba(10, 10, 15, 1) 70%);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  .cyber-grid {
+    background-image: 
+      linear-gradient(rgba(0, 217, 255, 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 217, 255, 0.1) 1px, transparent 1px);
+    background-size: 50px 50px;
+  }
+
+  .neon-border {
+    border: 1px solid transparent;
+    background: linear-gradient(45deg, rgba(0, 217, 255, 0.3), rgba(184, 71, 255, 0.3)) border-box;
+    border-radius: 8px;
+  }
+
+  .glow-text {
+    text-shadow: 
+      0 0 5px currentColor,
+      0 0 10px currentColor,
+      0 0 20px currentColor;
+  }
+
+  .hologram {
+    background: linear-gradient(
+      45deg,
+      rgba(0, 217, 255, 0.1),
+      rgba(184, 71, 255, 0.1),
+      rgba(0, 255, 136, 0.1)
+    );
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 217, 255, 0.3);
+  }
+
+  .cyber-button {
+    @apply relative overflow-hidden bg-gradient-to-r from-cyber-blue to-cyber-purple text-white font-bold py-3 px-6 rounded-lg transition-all duration-300;
+    
+    &:hover {
+      @apply scale-105;
+      box-shadow: 
+        0 0 20px rgba(0, 217, 255, 0.5),
+        0 0 40px rgba(184, 71, 255, 0.3);
+    }
+    
+    &:before {
+      content: '';
+      @apply absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 -skew-x-12 transition-all duration-700;
+      left: -100%;
+    }
+    
+    &:hover:before {
+      @apply opacity-20;
+      left: 100%;
+    }
+  }
+
+  .matrix-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: -1;
+    opacity: 0.1;
+  }
+
+  .floating-icon {
+    @apply transition-all duration-300;
+    
+    &:hover {
+      @apply scale-110 text-cyber-blue;
+      filter: drop-shadow(0 0 10px currentColor);
+    }
+  }
+
+  .section-enter {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  }
+
+  .section-enter.animate {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
