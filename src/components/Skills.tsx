@@ -1,8 +1,20 @@
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+// Register ScrollTrigger plugin
+gsap.registerPlugin(ScrollTrigger);
 
 const Skills = () => {
   const [activeCategory, setActiveCategory] = useState('frontend');
+  
+  // Animation refs
+  const sectionRef = useRef<HTMLElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const radarRef = useRef<HTMLDivElement>(null);
+  const skillsListRef = useRef<HTMLDivElement>(null);
+  const categorySelectorRef = useRef<HTMLDivElement>(null);
 
   const skillCategories = {
     frontend: {
@@ -43,11 +55,94 @@ const Skills = () => {
     }
   };
 
+  // GSAP animations
+  useEffect(() => {
+    if (!sectionRef.current || !headerRef.current || !radarRef.current || !skillsListRef.current || !categorySelectorRef.current) return;
+
+    // Set initial states
+    gsap.set(headerRef.current, { opacity: 0, y: 50 });
+    gsap.set(categorySelectorRef.current, { opacity: 0, y: 30 });
+    gsap.set(radarRef.current, { opacity: 0, scale: 0.5, rotation: -180 });
+    gsap.set(skillsListRef.current.children, { opacity: 0, y: 30 });
+
+    // Create timeline
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: sectionRef.current,
+        start: 'top 80%',
+        end: 'bottom 20%',
+        once: true
+      }
+    });
+
+    // Animate header
+    tl.to(headerRef.current, {
+      opacity: 1,
+      y: 0,
+      duration: 1,
+      ease: 'power2.out'
+    });
+
+    // Animate category selector
+    tl.to(categorySelectorRef.current, {
+      opacity: 1,
+      y: 0,
+      duration: 0.8,
+      ease: 'power2.out'
+    }, '-=0.5');
+
+    // Animate radar chart with rotation and scale
+    tl.to(radarRef.current, {
+      opacity: 1,
+      scale: 1,
+      rotation: 0,
+      duration: 1.2,
+      ease: 'back.out(1.7)'
+    }, '-=0.3');
+
+    // Animate skills list with stagger
+    tl.to(skillsListRef.current.children, {
+      opacity: 1,
+      y: 0,
+      duration: 0.6,
+      stagger: 0.1,
+      ease: 'power2.out'
+    }, '-=0.5');
+
+    // Cleanup
+    return () => {
+      tl.kill();
+      ScrollTrigger.getAll().forEach(trigger => {
+        if (trigger.trigger === sectionRef.current) {
+          trigger.kill();
+        }
+      });
+    };
+  }, []);
+
+  // Animate radar points when category changes
+  useEffect(() => {
+    if (!radarRef.current) return;
+
+    const radarPoints = radarRef.current.querySelectorAll('[data-radar-point]');
+    
+    gsap.fromTo(radarPoints, 
+      { scale: 0, opacity: 0 },
+      { 
+        scale: 1, 
+        opacity: 1, 
+        duration: 0.5, 
+        stagger: 0.1, 
+        ease: 'back.out(1.7)' 
+      }
+    );
+  }, [activeCategory]);
+
   return (
-    <section className="py-20 px-4 relative" id="skills">
+    <section ref={sectionRef} className="py-20 px-4 relative" id="skills">
       <div className="max-w-6xl mx-auto">
         {/* Section Header */}
-        <div className="text-center mb-16">
+        <div ref={headerRef} className="text-center mb-16">
           <h2 className="text-4xl md:text-6xl font-cyber font-bold mb-4">
             <span className="bg-gradient-to-r from-cyber-purple to-cyber-green bg-clip-text text-transparent glow-text">
               Skills Matrix
@@ -60,7 +155,7 @@ const Skills = () => {
         </div>
 
         {/* Category Selector */}
-        <div className="flex justify-center mb-12">
+        <div ref={categorySelectorRef} className="flex justify-center mb-12">
           <div className="hologram rounded-lg p-2 flex gap-2">
             {Object.entries(skillCategories).map(([key, category]) => (
               <button
@@ -81,7 +176,7 @@ const Skills = () => {
         {/* Skills Display */}
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Holographic Radar Chart */}
-          <div className="relative">
+          <div ref={radarRef} className="relative">
             <div className="hologram rounded-full p-8 aspect-square flex items-center justify-center">
               <div className="relative w-80 h-80">
                 {/* Radar rings */}
@@ -125,11 +220,11 @@ const Skills = () => {
                   return (
                     <div
                       key={skill.name}
-                      className={`absolute w-3 h-3 bg-${skillCategories[activeCategory].color} rounded-full transform -translate-x-1/2 -translate-y-1/2 animate-pulse-neon`}
+                      data-radar-point
+                      className={`absolute w-3 h-3 bg-${skillCategories[activeCategory].color} rounded-full transform -translate-x-1/2 -translate-y-1/2`}
                       style={{
                         left: `calc(50% + ${x}px)`,
-                        top: `calc(50% + ${y}px)`,
-                        animationDelay: `${index * 0.2}s`
+                        top: `calc(50% + ${y}px)`
                       }}
                     />
                   );
@@ -139,12 +234,11 @@ const Skills = () => {
           </div>
 
           {/* Skills List */}
-          <div className="space-y-6">
+          <div ref={skillsListRef} className="space-y-6">
             {skillCategories[activeCategory].skills.map((skill, index) => (
               <div 
                 key={skill.name}
-                className="animate-slide-up"
-                style={{ animationDelay: `${index * 0.1}s` }}
+                className=""
               >
                 <div className="flex justify-between items-center mb-2">
                   <span className="font-tech font-semibold text-white">{skill.name}</span>

@@ -1,12 +1,27 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useGSAP } from '../hooks/useGSAP';
+
+// Register ScrollTrigger plugin
+gsap.registerPlugin(ScrollTrigger);
 
 const Hero = () => {
   const [displayText, setDisplayText] = useState('');
   const [showCursor, setShowCursor] = useState(true);
   const fullText = 'HITAYEZU Frank Duff';
   const nickname = 'dojdev';
+  
+  // Animation refs
+  const heroRef = useRef<HTMLElement>(null);
+  const backgroundRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const subtitleRef = useRef<HTMLParagraphElement>(null);
+  const buttonsRef = useRef<HTMLDivElement>(null);
+  const particlesRef = useRef<HTMLDivElement>(null);
 
+  // Typing animation effect
   useEffect(() => {
     let currentIndex = 0;
     const typeText = () => {
@@ -26,27 +41,109 @@ const Hero = () => {
     return () => clearInterval(cursorInterval);
   }, []);
 
+  // GSAP animations on component mount
+  useEffect(() => {
+    if (!heroRef.current || !titleRef.current || !subtitleRef.current || !buttonsRef.current) return;
+
+    // Set initial states
+    gsap.set([titleRef.current, subtitleRef.current, buttonsRef.current], {
+      opacity: 0,
+      y: 50,
+      scale: 0.8
+    });
+
+    gsap.set(particlesRef.current?.children, {
+      opacity: 0,
+      scale: 0
+    });
+
+    // Create master timeline
+    const tl = gsap.timeline();
+
+    // Parallax background effect
+    if (backgroundRef.current) {
+      gsap.to(backgroundRef.current, {
+        y: -100,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: heroRef.current,
+          start: 'top bottom',
+          end: 'bottom top',
+          scrub: 1
+        }
+      });
+    }
+
+    // Animate particles
+    if (particlesRef.current) {
+      tl.to(particlesRef.current.children, {
+        opacity: 1,
+        scale: 1,
+        duration: 2,
+        stagger: 0.02,
+        ease: 'power2.out'
+      });
+    }
+
+    // Animate title with scale and fade
+    tl.to(titleRef.current, {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      duration: 1.5,
+      ease: 'back.out(1.7)'
+    }, '-=1');
+
+    // Animate subtitle
+    tl.to(subtitleRef.current, {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      duration: 1,
+      ease: 'power2.out'
+    }, '-=0.5');
+
+    // Animate buttons
+    tl.to(buttonsRef.current, {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      duration: 1,
+      ease: 'power2.out'
+    }, '-=0.3');
+
+    // Cleanup function
+    return () => {
+      tl.kill();
+      ScrollTrigger.getAll().forEach(trigger => {
+        if (trigger.trigger === heroRef.current) {
+          trigger.kill();
+        }
+      });
+    };
+  }, []);
+
   return (
-    <section className="min-h-screen flex items-center justify-center relative overflow-hidden cyber-grid">
+    <section ref={heroRef} className="min-h-screen flex items-center justify-center relative overflow-hidden cyber-grid">
       {/* Animated background particles */}
-      <div className="absolute inset-0">
-        {[...Array(50)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-1 h-1 bg-cyber-blue rounded-full animate-pulse"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 3}s`,
-              animationDuration: `${2 + Math.random() * 3}s`
-            }}
-          />
-        ))}
+      <div ref={backgroundRef} className="absolute inset-0">
+        <div ref={particlesRef} className="absolute inset-0">
+          {[...Array(50)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-1 h-1 bg-cyber-blue rounded-full"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`
+              }}
+            />
+          ))}
+        </div>
       </div>
 
       <div className="text-center z-10 max-w-4xl mx-auto px-4">
         {/* Main name with glitch effect */}
-        <h1 className="text-4xl md:text-6xl lg:text-8xl font-cyber font-black mb-4 relative">
+        <h1 ref={titleRef} className="text-4xl md:text-6xl lg:text-8xl font-cyber font-black mb-4 relative">
           <span className="bg-gradient-to-r from-cyber-blue via-cyber-purple to-cyber-pink bg-clip-text text-transparent glow-text">
             {displayText}
             {showCursor && <span className="animate-pulse">|</span>}
@@ -76,12 +173,12 @@ const Hero = () => {
         </div>
 
         {/* Subtitle */}
-        <p className="text-lg md:text-xl lg:text-2xl text-gray-300 font-tech mb-12 animate-fade-in" style={{ animationDelay: '3s' }}>
+        <p ref={subtitleRef} className="text-lg md:text-xl lg:text-2xl text-gray-300 font-tech mb-12">
           Junior Full-Stack Developer • Creative Technologist • Problem Solver
         </p>
 
         {/* Animated CTA buttons */}
-        <div className="flex flex-col sm:flex-row gap-6 justify-center animate-slide-up" style={{ animationDelay: '4s' }}>
+        <div ref={buttonsRef} className="flex flex-col sm:flex-row gap-6 justify-center">
   <a href="#skills" className="cyber-button">
     View My Work
   </a>

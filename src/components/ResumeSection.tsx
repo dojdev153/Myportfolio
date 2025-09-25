@@ -13,7 +13,7 @@ const ResumeSection: React.FC = () => {
           <p className="text-xl text-gray-400 font-tech">View or download my CV</p>
           <div className="w-24 h-1 bg-gradient-to-r from-cyber-purple to-cyber-blue mx-auto rounded-full mt-4"></div>
         </div>
-
+       
         <div className="flex flex-col sm:flex-row justify-center gap-4">
           <a
             href="/resume.pdf"

@@ -1,6 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ExternalLink, Github, Heart } from 'lucide-react';
 import { projectsAPI, analyticsAPI } from '../lib/api';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+// Register ScrollTrigger plugin
+gsap.registerPlugin(ScrollTrigger);
 
 interface Project {
   _id: string;
@@ -22,6 +27,11 @@ const Projects = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Animation refs
+  const sectionRef = useRef<HTMLElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const projectsGridRef = useRef<HTMLDivElement>(null);
 
   // Fetch projects from backend
   useEffect(() => {
@@ -54,6 +64,53 @@ const Projects = () => {
       page: '/projects'
     });
   }, []);
+
+  // GSAP animations for projects
+  useEffect(() => {
+    if (!sectionRef.current || !headerRef.current || !projectsGridRef.current || isLoading) return;
+
+    // Set initial states
+    gsap.set(headerRef.current, { opacity: 0, y: 50 });
+    gsap.set(projectsGridRef.current.children, { opacity: 0, y: 80, scale: 0.8 });
+
+    // Create timeline
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: sectionRef.current,
+        start: 'top 80%',
+        end: 'bottom 20%',
+        once: true
+      }
+    });
+
+    // Animate header
+    tl.to(headerRef.current, {
+      opacity: 1,
+      y: 0,
+      duration: 1,
+      ease: 'power2.out'
+    });
+
+    // Animate project cards with stagger
+    tl.to(projectsGridRef.current.children, {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      duration: 0.8,
+      stagger: 0.2,
+      ease: 'back.out(1.7)'
+    }, '-=0.5');
+
+    // Cleanup
+    return () => {
+      tl.kill();
+      ScrollTrigger.getAll().forEach(trigger => {
+        if (trigger.trigger === sectionRef.current) {
+          trigger.kill();
+        }
+      });
+    };
+  }, [isLoading, projects]);
 
   // Handle project like
   const handleLike = async (projectId: string) => {
@@ -136,10 +193,10 @@ const Projects = () => {
   ];
 
   return (
-    <section className="py-20 px-4 relative" id="projects">
+    <section ref={sectionRef} className="py-20 px-4 relative" id="projects">
       <div className="max-w-7xl mx-auto">
         {/* Section Header */}
-        <div className="text-center mb-16">
+        <div ref={headerRef} className="text-center mb-16">
           <h2 className="text-4xl md:text-6xl font-cyber font-bold mb-4">
             <span className="bg-gradient-to-r from-cyber-green to-cyber-blue bg-clip-text text-transparent glow-text">
               Projects
@@ -172,12 +229,11 @@ const Projects = () => {
 
         {/* Projects Grid */}
         {!isLoading && (
-          <div className="grid md:grid-cols-2 gap-8">
+          <div ref={projectsGridRef} className="grid md:grid-cols-2 gap-8">
             {projects.map((project, index) => (
               <div 
                 key={project._id}
-                className="group hologram rounded-lg overflow-hidden hover:scale-105 transition-all duration-500 animate-scale-in"
-                style={{ animationDelay: `${index * 0.2}s` }}
+                className="group hologram rounded-lg overflow-hidden hover:scale-105 transition-all duration-500"
               >
               {/* Project Image */}
               <div className="relative overflow-hidden">

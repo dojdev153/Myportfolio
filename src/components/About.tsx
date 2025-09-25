@@ -1,7 +1,19 @@
 
 import { User, Code, Palette, Zap } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+// Register ScrollTrigger plugin
+gsap.registerPlugin(ScrollTrigger);
 
 const About = () => {
+  // Animation refs
+  const sectionRef = useRef<HTMLElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
+  const timelineRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
+
   const timelineItems = [
     {
       year: '2024',
@@ -29,11 +41,71 @@ const About = () => {
     }
   ];
 
+  // GSAP animations
+  useEffect(() => {
+    if (!sectionRef.current || !profileRef.current || !timelineRef.current || !headerRef.current) return;
+
+    // Set initial states
+    gsap.set(headerRef.current, { opacity: 0, y: 50 });
+    gsap.set(profileRef.current, { opacity: 0, x: -100 });
+    gsap.set(timelineRef.current, { opacity: 0, x: 100 });
+
+    // Create timeline
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: sectionRef.current,
+        start: 'top 80%',
+        end: 'bottom 20%',
+        once: true
+      }
+    });
+
+    // Animate header
+    tl.to(headerRef.current, {
+      opacity: 1,
+      y: 0,
+      duration: 1,
+      ease: 'power2.out'
+    });
+
+    // Animate profile and timeline simultaneously
+    tl.to([profileRef.current, timelineRef.current], {
+      opacity: 1,
+      x: 0,
+      duration: 1.2,
+      ease: 'power2.out'
+    }, '-=0.5');
+
+    // Animate timeline items with stagger
+    const timelineItems = timelineRef.current.querySelectorAll('.timeline-item');
+    if (timelineItems.length > 0) {
+      gsap.set(timelineItems, { opacity: 0, y: 30 });
+      
+      tl.to(timelineItems, {
+        opacity: 1,
+        y: 0,
+        duration: 0.8,
+        stagger: 0.2,
+        ease: 'power2.out'
+      }, '-=0.3');
+    }
+
+    // Cleanup
+    return () => {
+      tl.kill();
+      ScrollTrigger.getAll().forEach(trigger => {
+        if (trigger.trigger === sectionRef.current) {
+          trigger.kill();
+        }
+      });
+    };
+  }, []);
+
   return (
-    <section className="py-20 px-4 relative" id="about">
+    <section ref={sectionRef} className="py-20 px-4 relative" id="about">
       <div className="max-w-6xl mx-auto">
         {/* Section Header */}
-        <div className="text-center mb-16">
+        <div ref={headerRef} className="text-center mb-16">
           <h2 className="text-4xl md:text-6xl font-cyber font-bold mb-4">
             <span className="bg-gradient-to-r from-cyber-blue to-cyber-purple bg-clip-text text-transparent glow-text">
               About Me
@@ -44,7 +116,7 @@ const About = () => {
 
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Profile Section */}
-          <div className="hologram p-8 rounded-lg">
+          <div ref={profileRef} className="hologram p-8 rounded-lg">
             <div className="relative mb-6">
               <div className="w-32 h-32 mx-auto bg-gradient-to-br from-cyber-blue to-cyber-purple rounded-full p-1">
                 <div className="w-full h-full bg-cyber-dark rounded-full flex items-center justify-center">
@@ -77,11 +149,11 @@ const About = () => {
           </div>
 
           {/* Timeline Section */}
-          <div className="space-y-8">
+          <div ref={timelineRef} className="space-y-8">
             <h3 className="text-2xl font-cyber font-bold text-cyber-green mb-8">Journey Timeline</h3>
             
             {timelineItems.map((item, index) => (
-              <div key={index} className="relative pl-8 animate-slide-up" style={{ animationDelay: `${index * 0.2}s` }}>
+              <div key={index} className="timeline-item relative pl-8">
                 {/* Timeline line */}
                 <div className="absolute left-4 top-0 bottom-0 w-px bg-gradient-to-b from-cyber-blue to-cyber-purple"></div>
                 

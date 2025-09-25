@@ -1,7 +1,12 @@
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Mail, Phone, MapPin, Send, CheckCircle, AlertCircle } from 'lucide-react';
 import { contactAPI, analyticsAPI } from '../lib/api';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+// Register ScrollTrigger plugin
+gsap.registerPlugin(ScrollTrigger);
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -15,6 +20,12 @@ const Contact = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [submitMessage, setSubmitMessage] = useState('');
+  
+  // Animation refs
+  const sectionRef = useRef<HTMLElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const contactInfoRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLDivElement>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
@@ -103,11 +114,72 @@ const Contact = () => {
     }
   ];
 
+  // GSAP animations
+  useEffect(() => {
+    if (!sectionRef.current || !headerRef.current || !contactInfoRef.current || !formRef.current) return;
+
+    // Set initial states
+    gsap.set(headerRef.current, { opacity: 0, y: 50 });
+    gsap.set(contactInfoRef.current, { opacity: 0, y: 80 });
+    gsap.set(formRef.current, { opacity: 0, y: 80 });
+
+    // Create timeline
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: sectionRef.current,
+        start: 'top 80%',
+        end: 'bottom 20%',
+        once: true
+      }
+    });
+
+    // Animate header
+    tl.to(headerRef.current, {
+      opacity: 1,
+      y: 0,
+      duration: 1,
+      ease: 'power2.out'
+    });
+
+    // Animate contact info and form with upward motion
+    tl.to([contactInfoRef.current, formRef.current], {
+      opacity: 1,
+      y: 0,
+      duration: 1.2,
+      stagger: 0.3,
+      ease: 'power2.out'
+    }, '-=0.5');
+
+    // Animate contact info items with stagger
+    const contactItems = contactInfoRef.current.querySelectorAll('.contact-item');
+    if (contactItems.length > 0) {
+      gsap.set(contactItems, { opacity: 0, x: -30 });
+      
+      tl.to(contactItems, {
+        opacity: 1,
+        x: 0,
+        duration: 0.6,
+        stagger: 0.1,
+        ease: 'power2.out'
+      }, '-=0.3');
+    }
+
+    // Cleanup
+    return () => {
+      tl.kill();
+      ScrollTrigger.getAll().forEach(trigger => {
+        if (trigger.trigger === sectionRef.current) {
+          trigger.kill();
+        }
+      });
+    };
+  }, []);
+
   return (
-    <section className="py-20 px-4 relative" id="contact">
+    <section ref={sectionRef} className="py-20 px-4 relative" id="contact">
       <div className="max-w-6xl mx-auto">
         {/* Section Header */}
-        <div className="text-center mb-16">
+        <div ref={headerRef} className="text-center mb-16">
           <h2 className="text-4xl md:text-6xl font-cyber font-bold mb-4">
             <span className="bg-gradient-to-r from-cyber-pink to-cyber-blue bg-clip-text text-transparent glow-text">
               Get In Touch
@@ -121,7 +193,7 @@ const Contact = () => {
 
         <div className="grid lg:grid-cols-2 gap-12">
           {/* Contact Information */}
-          <div className="space-y-8">
+          <div ref={contactInfoRef} className="space-y-8">
             <div className="hologram p-8 rounded-lg">
               <h3 className="text-2xl font-cyber font-bold text-cyber-blue mb-6">
                 Connect With Me
@@ -137,7 +209,7 @@ const Contact = () => {
                   <a
                     key={index}
                     href={info.href}
-                    className="flex items-center gap-4 p-4 rounded-lg border border-cyber-blue/30 hover:border-cyber-blue hover:bg-cyber-blue/5 transition-all duration-300 group"
+                    className="contact-item flex items-center gap-4 p-4 rounded-lg border border-cyber-blue/30 hover:border-cyber-blue hover:bg-cyber-blue/5 transition-all duration-300 group"
                   >
                     <div className="w-12 h-12 bg-gradient-to-br from-cyber-blue to-cyber-purple rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                       <info.icon size={20} className="text-white" />
@@ -175,7 +247,7 @@ const Contact = () => {
           </div>
 
           {/* Contact Form */}
-          <div className="hologram p-8 rounded-lg">
+          <div ref={formRef} className="hologram p-8 rounded-lg">
             <h3 className="text-2xl font-cyber font-bold text-cyber-green mb-6">
               Send Message
             </h3>
