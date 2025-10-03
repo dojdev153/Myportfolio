@@ -18,7 +18,23 @@ const app = express();
 
 // Validate environment and connect to Database
 validateEnv();
-connectDB();
+
+// Handle MongoDB connection requirements based on environment
+const isProduction = process.env.NODE_ENV === 'production';
+if (isProduction) {
+  app.set('trust proxy', 1);
+  console.log('🛡️  Trust proxy enabled (1 hop)');
+}
+if (!process.env.MONGODB_URI) {
+  if (isProduction) {
+    console.error('❌ MONGODB_URI is required in production. Server cannot start without a database connection.');
+    process.exit(1);
+  } else {
+    console.log('⚠️ No MongoDB URI set — routes depending on DB will fail.');
+  }
+} else {
+  connectDB();
+}
 
 // Verify email configuration on startup (optional)
 verifyEmailConfig().catch(err => {
@@ -39,13 +55,19 @@ app.use(helmet({
 }));
 
 // CORS configuration
+const allowedOrigins = isProduction
+  ? [process.env.FRONTEND_URL].filter(Boolean)
+  : [
+      process.env.FRONTEND_URL,
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'http://localhost:4173'
+    ].filter(Boolean);
+
+console.log('🔐 CORS allowed origins:', allowedOrigins);
+
 app.use(cors({
-  origin: [
-    process.env.FRONTEND_URL,
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'http://localhost:4173'
-  ],
+  origin: allowedOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization']

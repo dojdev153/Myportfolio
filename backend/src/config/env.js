@@ -1,13 +1,15 @@
 // Environment validation and helpers
 
+// Critical vars required for production startup
 const REQUIRED_VARS = [
   'JWT_SECRET',
   'ADMIN_EMAIL',
-  'ADMIN_PASSWORD'
+  'ADMIN_PASSWORD',
+  'MONGODB_URI'
 ];
 
+// Optional vars (helpful but not fatal if missing)
 const OPTIONAL_VARS = [
-  'MONGODB_URI',
   'JWT_EXPIRE',
   'EMAIL_HOST',
   'EMAIL_PORT',
@@ -20,16 +22,25 @@ const OPTIONAL_VARS = [
 ];
 
 function validateEnv() {
+  const envMode = process.env.NODE_ENV || 'development';
+
+  // Determine missing required variables
   const missing = REQUIRED_VARS.filter((key) => !process.env[key]);
 
-  if (missing.length > 0) {
-    console.log('⚠️  Missing required environment variables:');
-    missing.forEach((key) => console.log(`   - ${key}`));
-    console.log('💡 Add them to your .env file. The server will start, but some features may not work.');
-  }
-
-  if (!process.env.MONGODB_URI) {
-    console.log('⚠️  MONGODB_URI not set. Database features will be disabled.');
+  if (envMode === 'production') {
+    if (missing.length > 0) {
+      console.error('❌ Missing required environment variables for production:');
+      missing.forEach((key) => console.error(`   - ${key}`));
+      console.error('🚫 Server cannot start without these variables. Set them and retry.');
+      // Fail fast in production
+      process.exit(1);
+    }
+  } else {
+    if (missing.length > 0) {
+      console.log('⚠️  Missing required environment variables:');
+      missing.forEach((key) => console.log(`   - ${key}`));
+      console.log('💡 Add them to your .env file. The server will start, but some features may not work.');
+    }
   }
 
   // Normalize and provide soft defaults

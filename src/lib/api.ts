@@ -1,8 +1,21 @@
 import axios from 'axios';
 
+// Resolve API base URL based on environment
+export const API_BASE_URL: string = (() => {
+  const provided = import.meta.env.VITE_API_URL as string | undefined;
+  if (import.meta.env.PROD) {
+    if (!provided) {
+      throw new Error('VITE_API_URL must be set in production');
+    }
+    return provided;
+  }
+  // Development default
+  return provided || 'http://localhost:5000/api';
+})();
+
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: API_BASE_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'

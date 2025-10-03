@@ -223,14 +223,26 @@ router.post('/seed-projects', auth, async (req, res) => {
 // @access  Public (but restricted by environment)
 router.post('/create-admin', async (req, res) => {
   try {
-    // Only allow in development or if no admin exists
     const existingAdmins = await Admin.countDocuments();
-    
-    if (existingAdmins > 0 && process.env.NODE_ENV === 'production') {
-      return res.status(403).json({
+
+    // If an admin already exists, block regardless of environment
+    if (existingAdmins > 0) {
+      return res.status(400).json({
         success: false,
-        message: 'Admin user already exists'
+        message: 'Admin already exists'
       });
+    }
+
+    // In production, require valid setup token header
+    const isProduction = process.env.NODE_ENV === 'production';
+    if (isProduction) {
+      const setupToken = req.header('x-setup-token');
+      if (!setupToken || setupToken !== process.env.ADMIN_SETUP_TOKEN) {
+        return res.status(403).json({
+          success: false,
+          message: 'Forbidden'
+        });
+      }
     }
 
     const adminData = {

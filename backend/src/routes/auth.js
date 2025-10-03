@@ -27,6 +27,7 @@ router.post('/login', [
     }
 
     const { email, password } = req.body;
+    const isProduction = process.env.NODE_ENV === 'production';
 
     // Check if admin exists
     let admin;
@@ -41,10 +42,39 @@ router.post('/login', [
       console.log('Database error, checking fallback auth:', error.message);
     }
     
-    // Fallback authentication for testing (when no admin exists in DB)
+    // Determine if DB has any admins when configured
+    let adminCount = 0;
+    if (process.env.MONGODB_URI) {
+      try {
+        adminCount = await Admin.countDocuments();
+      } catch (error) {
+        console.log('Admin count check failed:', error.message);
+      }
+    }
+
+    // Fallback authentication logic
     if (!admin) {
+      // If DB is configured and at least one admin exists, disallow fallback
+      if (process.env.MONGODB_URI && adminCount > 0) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid credentials'
+        });
+      }
+
+      // Production: require valid setup token header to permit fallback
+      if (isProduction) {
+        const setupToken = req.header('x-setup-token');
+        if (!setupToken || setupToken !== process.env.ADMIN_SETUP_TOKEN) {
+          return res.status(403).json({
+            success: false,
+            message: 'Forbidden'
+          });
+        }
+      }
+
+      // In non-production or production with valid setup token, allow fallback if env creds match
       if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
-        // Create temporary admin object for response
         const tempAdmin = {
           _id: 'temp-admin-id',
           email: process.env.ADMIN_EMAIL,
@@ -52,7 +82,7 @@ router.post('/login', [
           lastLogin: new Date(),
           loginCount: 1
         };
-        
+
         const token = jwt.sign(
           { id: tempAdmin._id },
           process.env.JWT_SECRET,
@@ -65,12 +95,12 @@ router.post('/login', [
           token,
           admin: tempAdmin
         });
-      } else {
-        return res.status(401).json({
-          success: false,
-          message: 'Invalid credentials'
-        });
       }
+
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials'
+      });
     }
 
     if (!isPasswordValid) {
