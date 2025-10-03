@@ -9,6 +9,18 @@ export default {
 		"./app/**/*.{ts,tsx}",
 		"./src/**/*.{ts,tsx}",
 	],
+	safelist: [
+		// Dynamic cyber color utilities used in admin dashboard
+		'bg-cyber-blue', 'border-cyber-blue', 'text-cyber-blue',
+		'bg-cyber-green', 'border-cyber-green', 'text-cyber-green',
+		'bg-cyber-purple', 'border-cyber-purple', 'text-cyber-purple',
+		'bg-cyber-pink', 'border-cyber-pink', 'text-cyber-pink',
+		// With opacity modifiers used like bg-<color>/20
+		'bg-cyber-blue/5','bg-cyber-blue/10','bg-cyber-blue/20','border-cyber-blue/20','border-cyber-blue/30',
+		'bg-cyber-green/5','bg-cyber-green/10','bg-cyber-green/20','border-cyber-green/20','border-cyber-green/30',
+		'bg-cyber-purple/5','bg-cyber-purple/10','bg-cyber-purple/20','border-cyber-purple/20','border-cyber-purple/30',
+		'bg-cyber-pink/5','bg-cyber-pink/10','bg-cyber-pink/20','border-cyber-pink/20','border-cyber-pink/30'
+	],
 	prefix: "",
 	theme: {
 		container: {

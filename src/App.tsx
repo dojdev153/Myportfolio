@@ -24,6 +24,7 @@ const App = () => {
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        {/* NOTE: When deploying with static hosting, configure a rewrite so any unknown path serves index.html for SPA fallback. */}
         <BrowserRouter>
           <APIHealthBanner />
           <Routes>

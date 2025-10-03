@@ -31,13 +31,52 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor for error handling
+// Response interceptor for error handling with single refresh attempt
+let isRefreshing = false;
+let pendingRequests: Array<() => void> = [];
+
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
+  async (error) => {
+    const status = error.response?.status;
+    const originalRequest = error.config || {};
+
+    if (status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      try {
+        if (!isRefreshing) {
+          isRefreshing = true;
+          // Try refresh endpoint
+          const refreshResp = await api.post('/auth/refresh');
+          if (refreshResp?.data?.success && refreshResp?.data?.token) {
+            localStorage.setItem('adminToken', refreshResp.data.token);
+            pendingRequests.forEach((cb) => cb());
+            pendingRequests = [];
+            isRefreshing = false;
+            // Update header and retry original
+            originalRequest.headers = originalRequest.headers || {};
+            originalRequest.headers['Authorization'] = `Bearer ${refreshResp.data.token}`;
+            return api(originalRequest);
+          }
+        } else {
+          // Queue this request until refresh done
+          await new Promise<void>((resolve) => pendingRequests.push(resolve));
+          return api(originalRequest);
+        }
+      } catch (e) {
+        // fall through to logout
+      } finally {
+        isRefreshing = false;
+      }
+    }
+
+    if (status === 401) {
       localStorage.removeItem('adminToken');
-      // Redirect to login if needed
+      try {
+        if (typeof window !== 'undefined') {
+          window.location.href = '/admin/login';
+        }
+      } catch {}
     }
     return Promise.reject(error);
   }
