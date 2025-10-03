@@ -6,11 +6,12 @@ const Analytics = require('../models/Analytics');
 const auth = require('../middleware/auth');
 
 const router = express.Router();
+const { dbAvailabilityGuard } = require('../middleware/dbStatus');
 
 // @route   GET /api/admin/overview
 // @desc    Get admin dashboard overview (admin only)
 // @access  Private
-router.get('/overview', auth, async (req, res) => {
+router.get('/overview', [dbAvailabilityGuard, auth], async (req, res) => {
   try {
     const [
       totalContacts,
@@ -75,7 +76,7 @@ router.get('/overview', auth, async (req, res) => {
 // @route   GET /api/admin/system-info
 // @desc    Get system information (admin only)
 // @access  Private
-router.get('/system-info', auth, async (req, res) => {
+router.get('/system-info', [dbAvailabilityGuard, auth], async (req, res) => {
   try {
     const [
       databaseStats,
@@ -133,7 +134,7 @@ router.get('/system-info', auth, async (req, res) => {
 // @route   POST /api/admin/seed-projects
 // @desc    Seed initial projects data (admin only)
 // @access  Private
-router.post('/seed-projects', auth, async (req, res) => {
+router.post('/seed-projects', [dbAvailabilityGuard, auth], async (req, res) => {
   try {
     // Check if projects already exist
     const existingProjects = await Project.countDocuments();
@@ -276,7 +277,7 @@ router.post('/create-admin', async (req, res) => {
 // @route   DELETE /api/admin/clear-analytics
 // @desc    Clear old analytics data (admin only)
 // @access  Private
-router.delete('/clear-analytics', auth, async (req, res) => {
+router.delete('/clear-analytics', [dbAvailabilityGuard, auth], async (req, res) => {
   try {
     const { days = 90 } = req.query;
     const cutoffDate = new Date(Date.now() - parseInt(days) * 24 * 60 * 60 * 1000);

@@ -5,11 +5,12 @@ const Project = require('../models/Project');
 const auth = require('../middleware/auth');
 
 const router = express.Router();
+const { dbAvailabilityGuard } = require('../middleware/dbStatus');
 
 // @route   POST /api/analytics/track
 // @desc    Track analytics event (public)
 // @access  Public
-router.post('/track', async (req, res) => {
+router.post('/track', dbAvailabilityGuard, async (req, res) => {
   try {
     const { event, page, projectId, metadata } = req.body;
     
@@ -49,7 +50,7 @@ router.post('/track', async (req, res) => {
 // @route   GET /api/analytics/dashboard
 // @desc    Get analytics dashboard data (admin only)
 // @access  Private
-router.get('/dashboard', auth, async (req, res) => {
+router.get('/dashboard', [dbAvailabilityGuard, auth], async (req, res) => {
   try {
     const { period = '7d' } = req.query;
     
@@ -205,7 +206,7 @@ router.get('/dashboard', auth, async (req, res) => {
 // @route   GET /api/analytics/popular-projects
 // @desc    Get most popular projects (admin only)
 // @access  Private
-router.get('/popular-projects', auth, async (req, res) => {
+router.get('/popular-projects', [dbAvailabilityGuard, auth], async (req, res) => {
   try {
     const { period = '30d', limit = 10 } = req.query;
     

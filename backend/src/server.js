@@ -80,16 +80,17 @@ app.use(generalLimiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Request logging middleware
-app.use((req, res, next) => {
-  const timestamp = new Date().toISOString();
-  const method = req.method;
-  const url = req.originalUrl;
-  const ip = req.ip || req.connection.remoteAddress;
-  
-  console.log(`[${timestamp}] ${method} ${url} - IP: ${ip}`);
-  next();
-});
+// Request logging middleware (verbose in development only)
+if (!isProduction) {
+  app.use((req, res, next) => {
+    const timestamp = new Date().toISOString();
+    const method = req.method;
+    const url = req.originalUrl;
+    const ip = req.ip || req.connection.remoteAddress;
+    console.log(`[${timestamp}] ${method} ${url} - IP: ${ip}`);
+    next();
+  });
+}
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

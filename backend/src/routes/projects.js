@@ -5,11 +5,12 @@ const Analytics = require('../models/Analytics');
 const auth = require('../middleware/auth');
 
 const router = express.Router();
+const { dbAvailabilityGuard } = require('../middleware/dbStatus');
 
 // @route   GET /api/projects
 // @desc    Get all projects (public)
 // @access  Public
-router.get('/', async (req, res) => {
+router.get('/', dbAvailabilityGuard, async (req, res) => {
   try {
     const { category, featured, status, limit = 10, page = 1 } = req.query;
     
@@ -69,7 +70,7 @@ router.get('/', async (req, res) => {
 // @route   GET /api/projects/:id
 // @desc    Get single project (public)
 // @access  Public
-router.get('/:id', async (req, res) => {
+router.get('/:id', dbAvailabilityGuard, async (req, res) => {
   try {
     const project = await Project.findById(req.params.id);
 
@@ -117,6 +118,7 @@ router.get('/:id', async (req, res) => {
 // @desc    Create new project (admin only)
 // @access  Private
 router.post('/', [
+  dbAvailabilityGuard,
   auth,
   body('title').trim().isLength({ min: 1, max: 100 }).withMessage('Title is required (max 100 characters)'),
   body('description').trim().isLength({ min: 1, max: 500 }).withMessage('Description is required (max 500 characters)'),
@@ -157,6 +159,7 @@ router.post('/', [
 // @desc    Update project (admin only)
 // @access  Private
 router.put('/:id', [
+  dbAvailabilityGuard,
   auth,
   body('title').optional().trim().isLength({ min: 1, max: 100 }).withMessage('Title must be between 1-100 characters'),
   body('description').optional().trim().isLength({ min: 1, max: 500 }).withMessage('Description must be between 1-500 characters'),
@@ -211,7 +214,7 @@ router.put('/:id', [
 // @route   DELETE /api/projects/:id
 // @desc    Delete project (admin only)
 // @access  Private
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', [dbAvailabilityGuard, auth], async (req, res) => {
   try {
     const project = await Project.findById(req.params.id);
 
@@ -241,7 +244,7 @@ router.delete('/:id', auth, async (req, res) => {
 // @route   PATCH /api/projects/:id/like
 // @desc    Like/unlike project (public)
 // @access  Public
-router.patch('/:id/like', async (req, res) => {
+router.patch('/:id/like', dbAvailabilityGuard, async (req, res) => {
   try {
     const project = await Project.findById(req.params.id);
 
@@ -274,7 +277,7 @@ router.patch('/:id/like', async (req, res) => {
 // @route   PATCH /api/projects/:id/feature
 // @desc    Toggle project featured status (admin only)
 // @access  Private
-router.patch('/:id/feature', auth, async (req, res) => {
+router.patch('/:id/feature', [dbAvailabilityGuard, auth], async (req, res) => {
   try {
     const project = await Project.findById(req.params.id);
 
@@ -306,7 +309,7 @@ router.patch('/:id/feature', auth, async (req, res) => {
 // @route   GET /api/projects/stats/overview
 // @desc    Get projects statistics (admin only)
 // @access  Private
-router.get('/stats/overview', auth, async (req, res) => {
+router.get('/stats/overview', [dbAvailabilityGuard, auth], async (req, res) => {
   try {
     const [
       totalProjects,

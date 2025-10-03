@@ -7,11 +7,13 @@ const auth = require('../middleware/auth');
 const { contactLimiter } = require('../middleware/rateLimiter');
 
 const router = express.Router();
+const { dbAvailabilityGuard } = require('../middleware/dbStatus');
 
 // @route   POST /api/contact
 // @desc    Submit contact form
 // @access  Public
 router.post('/', [
+  dbAvailabilityGuard,
   contactLimiter,
   body('name').trim().isLength({ min: 2, max: 100 }).withMessage('Name must be between 2 and 100 characters'),
   body('email').isEmail().normalizeEmail().withMessage('Please enter a valid email'),
@@ -104,7 +106,7 @@ router.post('/', [
 // @route   GET /api/contact
 // @desc    Get all contacts (admin only)
 // @access  Private
-router.get('/', auth, async (req, res) => {
+router.get('/', [dbAvailabilityGuard, auth], async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -177,7 +179,7 @@ router.get('/', auth, async (req, res) => {
 // @route   GET /api/contact/:id
 // @desc    Get single contact (admin only)
 // @access  Private
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', [dbAvailabilityGuard, auth], async (req, res) => {
   try {
     const contact = await Contact.findById(req.params.id);
 
@@ -212,6 +214,7 @@ router.get('/:id', auth, async (req, res) => {
 // @desc    Update contact status (admin only)
 // @access  Private
 router.patch('/:id/status', [
+  dbAvailabilityGuard,
   auth,
   body('status').isIn(['unread', 'read', 'replied']).withMessage('Invalid status')
 ], async (req, res) => {
@@ -262,7 +265,7 @@ router.patch('/:id/status', [
 // @route   DELETE /api/contact/:id
 // @desc    Delete contact (admin only)
 // @access  Private
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', [dbAvailabilityGuard, auth], async (req, res) => {
   try {
     const contact = await Contact.findById(req.params.id);
 

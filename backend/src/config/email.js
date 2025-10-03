@@ -1,5 +1,7 @@
 const nodemailer = require('nodemailer');
 
+const emailEnabled = String(process.env.ENABLE_EMAIL).toLowerCase() === 'true';
+
 // Create transporter
 const createTransporter = () => {
   return nodemailer.createTransport({
@@ -18,6 +20,10 @@ const createTransporter = () => {
 
 // Send contact notification to admin
 const sendContactNotification = async (contactData) => {
+  if (!emailEnabled) {
+    console.log('📭 Email disabled — skipping admin contact notification.');
+    return;
+  }
   const transporter = createTransporter();
   
   const mailOptions = {
@@ -77,6 +83,10 @@ const sendContactNotification = async (contactData) => {
 
 // Send auto-reply to visitor
 const sendAutoReply = async (contactData) => {
+  if (!emailEnabled) {
+    console.log('📭 Email disabled — skipping auto-reply.');
+    return;
+  }
   const transporter = createTransporter();
   
   const mailOptions = {
@@ -144,6 +154,10 @@ const sendAutoReply = async (contactData) => {
 
 // Verify email configuration
 const verifyEmailConfig = async () => {
+  if (!emailEnabled) {
+    console.log('📭 Email disabled — skipping email configuration verification.');
+    return false;
+  }
   // Skip verification if email credentials are not provided
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS || 
       process.env.EMAIL_PASS === 'your-16-character-app-password-here') {
